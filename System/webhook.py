@@ -55,7 +55,8 @@ with open(CONFIG_PATH) as f:
 # Meridian proxy config
 _MERIDIAN_BASE = os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
 _MERIDIAN_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-_DISPATCHER_MODEL = "claude-haiku-4-5"
+_DISPATCHER_MODEL = "claude-haiku-4-5-20251001"
+_VALID_ROUTES = {"FAST", "READ_ONLY", "WORKSPACE", "FORGE"}
 
 
 def _dispatch_via_meridian(prompt: str) -> tuple[bool, str, str, str]:
@@ -115,12 +116,14 @@ def _dispatch_via_meridian(prompt: str) -> tuple[bool, str, str, str]:
         if result.startswith("REJECTED:"):
             return False, result.replace("REJECTED:", "").strip(), *zero
 
-        route = "COMPLEX"
+        route = "FAST"  # safe default — at least one agent runs
         domain = "NONE"
         for line in result.split("\n"):
             line = line.strip()
             if line.startswith("ROUTE:"):
-                route = line.split("ROUTE:")[1].strip()
+                parsed = line.split("ROUTE:")[1].strip()
+                if parsed in _VALID_ROUTES:
+                    route = parsed
             elif line.startswith("DOMAIN:"):
                 domain = line.split("DOMAIN:")[1].strip()
 
